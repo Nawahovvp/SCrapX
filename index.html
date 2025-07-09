@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>รายงานพนักงาน</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background-color: #f0f4f8;
+      margin: 0;
+      padding: 20px;
+    }
+    #searchContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .filter-row {
+      display: flex;
+      align-items: center;
+    }
+    .search-row {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+    }
+    #employeeFilterLabel {
+      font-size: 16px;
+      color: #333;
+    }
+    #employeeFilter {
+      margin-left: 5px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      background-color: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    #employeeFilter:hover {
+      border-color: #2980b9;
+    }
+    #searchInput {
+      width: 300px;
+      padding: 10px;
+      border-radius: 8px 0 0 8px;
+      border: 1px solid #ccc;
+      border-right: none;
+      font-size: 16px;
+    }
+    #searchButton {
+      padding: 10px;
+      background-color: #3498db;
+      color: white;
+      border: 1px solid #ccc;
+      border-left: none;
+      border-radius: 0 8px 8px 0;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    #searchButton:hover {
+      background-color: #2980b9;
+    }
+    .table-container {
+      overflow-x: auto;
+      width: 100%;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      min-width: 900px;
+    }
+    th, td {
+      padding: 8px 12px;
+      text-align: left;
+      border: 1px solid #ccc;
+      white-space: nowrap;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    th.sortable {
+      cursor: pointer;
+    }
+    th.sortable:hover {
+      background-color: #0056b3;
+    }
+    .arrow {
+      font-size: 12px;
+      margin-left: 5px;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    .detail-button {
+      padding: 6px 10px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      width: 100px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .detail-button:hover {
+      background-color: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 1200px;
+      animation: zoomIn 0.4s ease;
+      overflow-x: auto;
+      position: relative;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close:hover {
+      color: #000;
+    }
+    .print-button {
+      float: right;
+      margin-right: 10px;
+      padding: 10px 16px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 16px;
+    }
+    .print-button:hover {
+      background-color: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    #modalContent span.label {
+      color: #007bff;
+      font-weight: bold;
+    }
+    #modalContent span.value {
+      color: #000;
+    }
+    .pagination {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+    }
+    .pagination button,
+    .pagination select {
+      padding: 8px 12px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 0 5px;
+      transition: all 0.3s ease;
+    }
+    .pagination button:hover,
+    .pagination select:hover {
+      background-color: #2980b9;
+    }
+    .pagination .page-number {
+      width: 36px;
+      height: 36px;
+      background-color: #3498db;
+      color: white;
+      border-radius: 50%;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 5px;
+      cursor: pointer;
+      font-size: 16px;
+      border: none;
+      transition: all 0.3s ease;
+    }
+    .pagination .page-number:hover {
+      background-color: #2980b9;
+      transform: scale(1.1);
+    }
+    .pagination .page-number.active {
+      background-color: #e67e22;
+      color: white;
+    }
+    .items-per-page {
+      margin-left: 10px;
+      font-size: 16px;
+    }
+    tr {
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeInUp 0.5s ease forwards;
+    }
+    tr:nth-child(even) {
+      animation-delay: 0.1s;
+    }
+    tr:nth-child(odd) {
+      animation-delay: 0.2s;
+    }
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes zoomIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    th:nth-child(3), td:nth-child(3) {
+      width: auto;
+      min-width: 100px;
+      max-width: 150px;
+      white-space: normal;
+    }
+    th:nth-child(7), td:nth-child(7) {
+      min-width: 150px;
+    }
+    @media (max-width: 768px) {
+      th:nth-child(3), td:nth-child(3) {
+        min-width: 80px;
+        font-size: 14px;
+      }
+    }
+    .yellow-light {
+      background-color: #c9ffc4;
+    }
+    .pink-pastel {
+      background-color: #fce4ec;
+    }
+    .text-left {
+      text-align: left;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .call-count-box {
+      margin-left: 20px;
+      padding: 10px 16px;
+      background-color: #e6f2ff;
+      color: #007bff;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      transition: background-color 0.3s ease;
+    }
+    .call-count-box span {
+      color: #d63384;
+      margin: 0 4px;
+      font-size: 18px;
+    }
+    .modern-label {
+      display: inline-block;
+      padding: 10px 16px;
+      background-color: #ffffff;
+      color: #007bff;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      border: 1px solid #d0eaff;
+      transition: all 0.3s ease;
+      margin-right: 8px;
+    }
+    .modern-label:hover {
+      background-color: #e6f2ff;
+      color: #0056b3;
+    }
+    .detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .detail-table th, .detail-table td {
+      padding: 8px;
+      border: 1px solid #ccc;
+      text-align: left;
+    }
+    .detail-table th {
+      background-color: #007bff;
+      color: white;
+    }
+    .detail-table tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    @media print {
+      .close, .print-button {
+        display: none;
+      }
+      .modal-content {
+        margin: 0;
+        padding: 10px;
+        width: 100%;
+        max-width: 100%;
+        border-radius: 0;
+        box-shadow: none;
+      }
+      .detail-table {
+        width: 100%;
+        font-size: 12pt;
+      }
+      .detail-table th, .detail-table td {
+        padding: 6px;
+        border: 1px solid #000;
+      }
+      h2, h3 {
+        font-size: 14pt;
+        color: #000;
+      }
+      span.label {
+        color: #000;
+        font-weight: bold;
+      }
+      span.value {
+        color: #000;
+      }
+    }
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .table-container {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+      }
+      table {
+        width: 100%;
+        font-size: 10pt;
+        border-collapse: collapse;
+      }
+      th, td {
+        padding: 4px;
+        border: 1px solid #000;
+      }
+      h1, h2 {
+        font-size: 12pt;
+      }
+      .no-print {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="searchContainer">
+    <div class="filter-row">
+      <label id="employeeFilterLabel" for="employeeFilter" class="modern-label">เลือกช่าง</label>
+      <select id="employeeFilter">
+        <option value="">ทั้งหมด</option>
+      </select>
+      <div id="callCountInfo" class="call-count-box">
+        จำนวนพนักงาน <span id="callCountValue">0</span> คน
+      </div>
+    </div>
+    <div class="search-row">
+      <input type="text" id="searchInput" placeholder="ค้นหา รหัสช่าง, Plant ,ชื่อช่าง, แผนก, ฝ่าย, GM..." />
+      <button id="searchButton"><i class="fas fa-search"></i></button>
+    </div>
+  </div>
+  <div class="table-container">
+    <table id="data-table">
+      <thead>
+        <tr>
+          <th class="sortable" data-column="DateEmployee">วันที่ฝาก <span class="arrow"></span></th>
+          <th class="sortable" data-column="Plant">Plant <span class="arrow"></span></th>
+          <th class="sortable" data-column="IDEmployee">รหัสช่าง <span class="arrow"></span></th>
+          <th class="sortable" data-column="Employee">ชื่อช่าง <span class="arrow"></span></th>
+          <th class="sortable" data-column="แผนก">แผนก <span class="arrow"></span></th>
+          <th class="sortable" data-column="Depart">ฝ่าย <span class="arrow"></span></th>
+          <th class="sortable" data-column="GM">GM <span class="arrow"></span></th>
+          <th>ดูรายละเอียด</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="detailModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">×</span>
+      <button class="print-button" onclick="printModalContent()">
+        <i class="fas fa-print"></i>
+        <span>พิมพ์</span>
+      </button>
+      <h2>รายละเอียด</h2>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <div class="pagination">
+    <button id="firstPage"><i class="fas fa-chevron-left"></i><i class="fas fa-chevron-left"></i></button>
+    <button id="prevPage"><i class="fas fa-chevron-left"></i></button>
+    <div id="pageNumbers"></div>
+    <button id="nextPage"><i class="fas fa-chevron-right"></i></button>
+    <button id="lastPage"><i class="fas fa-chevron-right"></i><i class="fas fa-chevron-right"></i></button>
+    <div class="items-per-page">
+      <label for="itemsPerPage">รายการต่อหน้า:</label>
+      <select id="itemsPerPage">
+        <option value="10">10 รายการ</option>
+        <option value="20" selected>20 รายการ</option>
+        <option value="30">30 รายการ</option>
+      </select>
+    </div>
+  </div>
+
+  <script>
+    const sheetID = '1Kx3MhVgD9v7I49743aUgagxcplBwXBpy7QXqvC0S9vc';
+    const sheetName = 'WebEmployee';
+    const detailSheetName = 'WebDetialList';
+    const url = `https://opensheet.elk.sh/${sheetID}/${sheetName}`;
+    const detailUrl = `https://opensheet.elk.sh/${sheetID}/${detailSheetName}`;
+
+    const modal = document.getElementById("detailModal");
+    const modalContent = document.getElementById("modalContent");
+    const closeModal = document.getElementById("closeModal");
+    const employeeFilter = document.getElementById("employeeFilter");
+    const searchInput = document.getElementById("searchInput");
+    const searchButton = document.getElementById("searchButton");
+    const tableBody = document.querySelector("#data-table tbody");
+    const pageNumbersContainer = document.getElementById("pageNumbers");
+    const firstPageButton = document.getElementById("firstPage");
+    const prevPageButton = document.getElementById("prevPage");
+    const nextPageButton = document.getElementById("nextPage");
+    const lastPageButton = document.getElementById("lastPage");
+    const itemsPerPageSelect = document.getElementById("itemsPerPage");
+
+    let allData = [];
+    let allDetailData = [];
+    let currentPage = 1;
+    let itemsPerPage = 20;
+    let sortConfig = { column: null, direction: 'asc' };
+
+    function printModalContent() {
+      const printWindow = window.open('', '_blank');
+      const content = modalContent.innerHTML;
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>พิมพ์รายละเอียด</title>
+            <style>
+              body {
+                font-family: 'Prompt', sans-serif;
+                margin: 20px;
+              }
+              h2, h3 {
+                font-size: 14pt;
+                color: #000;
+              }
+              .detail-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 12pt;
+              }
+              .detail-table th, .detail-table td {
+                padding: 6px;
+                border: 1px solid #000;
+                text-align: left;
+              }
+              .detail-table th {
+                background-color: #007bff;
+                color: white;
+              }
+              .detail-table tr:nth-child(even) {
+                background-color: #f9f9f9;
+              }
+              span.label {
+                color: #000;
+                font-weight: bold;
+              }
+              span.value {
+                color: #000;
+              }
+              @media print {
+                body {
+                  margin: 0;
+                }
+              }
+            </style>
+          </head>
+          <body onload="window.print()">
+            ${content}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+
+    closeModal.onclick = () => modal.style.display = "none";
+    window.onclick = event => {
+      if (event.target == modal) modal.style.display = "none";
+    };
+
+    itemsPerPageSelect.addEventListener("change", (e) => {
+      itemsPerPage = parseInt(e.target.value);
+      currentPage = 1;
+      filterAndRenderTable();
+    });
+
+    searchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        filterAndRenderTable();
+      }
+    });
+
+    searchButton.addEventListener("click", () => {
+      filterAndRenderTable();
+    });
+
+    function populateEmployeeFilter(data) {
+      const employees = [...new Set(data.map(row => row["Employee"]).filter(employee => employee))].sort();
+      employeeFilter.innerHTML = '<option value="">ทั้งหมด</option>';
+      employees.forEach(employee => {
+        const option = document.createElement("option");
+        option.value = employee;
+        option.textContent = employee;
+        employeeFilter.appendChild(option);
+      });
+    }
+
+    function addSortListeners() {
+      const sortableHeaders = document.querySelectorAll("th.sortable");
+      sortableHeaders.forEach(header => {
+        header.addEventListener("click", () => {
+          const column = header.getAttribute("data-column");
+          if (sortConfig.column === column) {
+            sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+          } else {
+            sortConfig.column = column;
+            sortConfig.direction = 'asc';
+          }
+          updateSortArrows();
+          filterAndRenderTable();
+        });
+      });
+    }
+
+    function updateSortArrows() {
+      const sortableHeaders = document.querySelectorAll("th.sortable");
+      sortableHeaders.forEach(header => {
+        const arrow = header.querySelector(".arrow");
+        const column = header.getAttribute("data-column");
+        if (column === sortConfig.column) {
+          arrow.textContent = sortConfig.direction === 'asc' ? '↑' : '↓';
+        } else {
+          arrow.textContent = '';
+        }
+      });
+    }
+
+    function filterAndRenderTable() {
+      const selectedEmployee = employeeFilter.value;
+      const keyword = searchInput.value.toLowerCase().trim();
+      let filteredData = allData.filter(row =>
+        (!selectedEmployee || row["Employee"] === selectedEmployee) &&
+        (!keyword ||
+          (row["DateEmployee"] || "").toLowerCase().includes(keyword) ||
+          (row["Plant"] || "").toLowerCase().includes(keyword) ||
+          (row["IDEmployee"] || "").toLowerCase().includes(keyword) ||
+          (row["Employee"] || "").toLowerCase().includes(keyword) ||
+          (row["แผนก"] || "").toLowerCase().includes(keyword) ||
+          (row["Depart"] || "").toLowerCase().includes(keyword) ||
+          (row["GM"] || "").toLowerCase().includes(keyword)
+        )
+      );
+
+      if (sortConfig.column) {
+        filteredData.sort((a, b) => {
+          let valueA = a[sortConfig.column] || "";
+          let valueB = b[sortConfig.column] || "";
+          valueA = valueA.toString().toLowerCase();
+          valueB = valueB.toString().toLowerCase();
+          return sortConfig.direction === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+        });
+      }
+
+      // ลบการรีเซ็ต currentPage = 1
+      renderTable(filteredData);
+      updateCallCount(filteredData);
+    }
+
+    employeeFilter.addEventListener("change", filterAndRenderTable);
+
+    function updateCallCount(data) {
+      const uniqueEmployees = [...new Set(data.map(row => row["IDEmployee"]))];
+      const count = uniqueEmployees.length;
+      const callCountValue = document.getElementById("callCountValue");
+      callCountValue.textContent = count;
+    }
+
+    function renderTable(data) {
+      tableBody.innerHTML = '';
+      const startIdx = (currentPage - 1) * itemsPerPage;
+      const endIdx = startIdx + itemsPerPage;
+      const paginatedData = data.slice(startIdx, endIdx);
+
+      const employeeGroups = {};
+      data.forEach(row => {
+        const employee = row["IDEmployee"];
+        if (!employeeGroups[employee]) {
+          employeeGroups[employee] = [];
+        }
+        employeeGroups[employee].push(row);
+      });
+
+      const uniqueEmployees = Object.keys(employeeGroups).sort();
+      const colorMap = {};
+      uniqueEmployees.forEach((employee, index) => {
+        colorMap[employee] = index % 2 === 0 ? "yellow-light" : "pink-pastel";
+      });
+
+      paginatedData.forEach((row, i) => {
+        const tr = document.createElement("tr");
+        tr.style.animationDelay = `${i * 0.05}s`;
+        const employee = row["IDEmployee"];
+        tr.className = colorMap[employee];
+
+        const columns = ["DateEmployee", "Plant", "IDEmployee", "Employee", "แผนก", "Depart", "GM"];
+        const displayColumns = {
+          "DateEmployee": "วันทีรับฝากอะไหล่เสีย",
+          "Plant": "Plant",
+          "IDEmployee": "รหัสช่าง",
+          "Employee": "ชื่อช่าง",
+          "แผนก": "แผนก",
+          "Depart": "ฝ่าย",
+          "GM": "GM"
+        };
+        columns.forEach(col => {
+          const td = document.createElement("td");
+          let cellValue = row[col] || "";
+          td.textContent = cellValue;
+          td.classList.add("text-left");
+          tr.appendChild(td);
+        });
+
+        const detailTd = document.createElement("td");
+        const btn = document.createElement("button");
+        btn.textContent = "ดูรายละเอียด";
+        btn.className = "detail-button";
+        btn.onclick = () => {
+          const ideployee = row["IDEmployee"];
+          const filteredDetails = allDetailData.filter(detail => detail["IDEmployeeX"] === ideployee);
+          let modalHtml = columns.map(col => {
+            let value = row[col] || "";
+            return `<div><span class='label'>${displayColumns[col]}:</span> <span class='value'>${value}</span></div>`;
+          }).join('');
+          
+          if (filteredDetails.length > 0) {
+            modalHtml += '<h3>รายละเอียดเพิ่มเติม</h3>';
+            modalHtml += '<table class="detail-table"><tr><th>รหัสช่าง</th><th>Material</th><th>รายละเอียด</th><th>จำนวน</th><th>สาเหตุ อาการ</th></tr>';
+            filteredDetails.forEach(detail => {
+              modalHtml += `<tr><td>${detail["IDEmployeeX"] || ""}</td><td>${detail["Materail"] || ""}</td><td>${detail["Description"] || ""}</td><td>${detail["Qty"] || ""}</td><td>${detail["Note"] || ""}</td></tr>`;
+            });
+            modalHtml += '</table>';
+          } else {
+            modalHtml += '<p>ไม่มีรายละเอียดเพิ่มเติม</p>';
+          }
+          modalContent.innerHTML = modalHtml;
+          modal.style.display = "block";
+        };
+        detailTd.appendChild(btn);
+        tr.appendChild(detailTd);
+
+        tableBody.appendChild(tr);
+      });
+      updatePagination(data);
+    }
+
+    function updatePagination(data) {
+      const totalPages = Math.ceil(data.length / itemsPerPage);
+      pageNumbersContainer.innerHTML = '';
+
+      // ตรวจสอบว่า currentPage อยู่ในช่วงที่ถูกต้อง
+      if (currentPage > totalPages) {
+        currentPage = totalPages || 1;
+      }
+
+      // คำนวณช่วงของหน้าที่จะแสดง (แสดง 4 หน้าต่อครั้ง)
+      const maxPagesToShow = 4;
+      const halfPages = Math.floor(maxPagesToShow / 2);
+      let startPage = Math.max(1, currentPage - halfPages);
+      let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+      // ปรับ startPage ถ้า endPage ถึงหน้าสุดท้าย
+      if (endPage - startPage < maxPagesToShow - 1) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+
+      // สร้างปุ่มเลขหน้า
+      for (let i = startPage; i <= endPage; i++) {
+        const pageNumberButton = document.createElement("button");
+        pageNumberButton.className = `page-number ${i === currentPage ? 'active' : ''}`;
+        pageNumberButton.textContent = i;
+        pageNumberButton.onclick = () => {
+          currentPage = i;
+          filterAndRenderTable();
+        };
+        pageNumbersContainer.appendChild(pageNumberButton);
+      }
+
+      // อัปเดตสถานะปุ่มนำทาง
+      firstPageButton.disabled = currentPage === 1;
+      prevPageButton.disabled = currentPage === 1;
+      nextPageButton.disabled = currentPage === totalPages;
+      lastPageButton.disabled = currentPage === totalPages;
+    }
+
+    firstPageButton.onclick = () => {
+      currentPage = 1;
+      filterAndRenderTable();
+    };
+
+    prevPageButton.onclick = () => {
+      if (currentPage > 1) {
+        currentPage--;
+        filterAndRenderTable();
+      }
+    };
+
+    nextPageButton.onclick = () => {
+      const totalPages = Math.ceil(
+        allData.filter(row => {
+          const selectedEmployee = employeeFilter.value;
+          const keyword = searchInput.value.toLowerCase().trim();
+          return (
+            (!selectedEmployee || row["Employee"] === selectedEmployee) &&
+            (!keyword ||
+              (row["DateEmployee"] || "").toLowerCase().includes(keyword) ||
+              (row["Plant"] || "").toLowerCase().includes(keyword) ||
+              (row["IDEmployee"] || "").toLowerCase().includes(keyword) ||
+              (row["Employee"] || "").toLowerCase().includes(keyword) ||
+              (row["แผนก"] || "").toLowerCase().includes(keyword) ||
+              (row["Depart"] || "").toLowerCase().includes(keyword) ||
+              (row["GM"] || "").toLowerCase().includes(keyword)
+            )
+          );
+        }).length / itemsPerPage
+      );
+      if (currentPage < totalPages) {
+        currentPage++;
+        filterAndRenderTable();
+      }
+    };
+
+    lastPageButton.onclick = () => {
+      currentPage = Math.ceil(
+        allData.filter(row => {
+          const selectedEmployee = employeeFilter.value;
+          const keyword = searchInput.value.toLowerCase().trim();
+          return (
+            (!selectedEmployee || row["Employee"] === selectedEmployee) &&
+            (!keyword ||
+              (row["DateEmployee"] || "").toLowerCase().includes(keyword) ||
+              (row["Plant"] || "").toLowerCase().includes(keyword) ||
+              (row["IDEmployee"] || "").toLowerCase().includes(keyword) ||
+              (row["Employee"] || "").toLowerCase().includes(keyword) ||
+              (row["แผนก"] || "").toLowerCase().includes(keyword) ||
+              (row["Depart"] || "").toLowerCase().includes(keyword) ||
+              (row["GM"] || "").toLowerCase().includes(keyword)
+            )
+          );
+        }).length / itemsPerPage
+      );
+      filterAndRenderTable();
+    };
+
+    Promise.all([
+      fetch(url).then(response => response.json()),
+      fetch(detailUrl).then(response => response.json())
+    ])
+      .then(([employeeData, detailData]) => {
+        allData = employeeData;
+        allDetailData = detailData;
+        populateEmployeeFilter(allData);
+        addSortListeners();
+        filterAndRenderTable();
+      })
+      .catch(error => {
+        console.error("ไม่สามารถโหลดข้อมูลได้:", error);
+        tableBody.innerHTML = '<tr><td colspan="8">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+      });
+  </script>
+</body>
+</html>
