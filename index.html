@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>รายงานพนักงาน</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <style>
     body {
@@ -11,6 +12,32 @@
       background-color: #f0f4f8;
       margin: 0;
       padding: 20px;
+    }
+    .header-title {
+      text-align: center;
+      font-size: 2.5rem;
+      color: #007bff;
+      margin-bottom: 30px;
+      font-weight: 700;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+      background: linear-gradient(90deg, #007bff, #00c4b4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      padding: 10px 20px;
+      border-bottom: 3px solid #007bff;
+      display: inline-block;
+      border-radius: 10px;
+      animation: fadeInDown 1s ease;
+    }
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
     #searchContainer {
       display: flex;
@@ -333,7 +360,41 @@
       background-color: #f9f9f9;
     }
     @media print {
-      .close, .print-button {
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .header-title {
+        color: #000;
+        -webkit-text-fill-color: #000;
+        text-shadow: none;
+        background: none;
+        border-bottom: 2px solid #000;
+        font-size: 18pt;
+      }
+      .table-container {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+      }
+      table {
+        width: 100%;
+        font-size: 10pt;
+        border-collapse: collapse;
+      }
+      th, td {
+        padding: 4px;
+        border: 1px solid #000;
+      }
+      h1, h2, h3 {
+        font-size: 12pt;
+        color: #000;
+      }
+      .close, .print-button, .no-print {
         display: none;
       }
       .modal-content {
@@ -352,51 +413,15 @@
         padding: 6px;
         border: 1px solid #000;
       }
-      h2, h3 {
-        font-size: 14pt;
+      span.label, span.value {
         color: #000;
-      }
-      span.label {
-        color: #000;
-        font-weight: bold;
-      }
-      span.value {
-        color: #000;
-      }
-    }
-    @media print {
-      @page {
-        size: A4 landscape;
-        margin: 10mm;
-      }
-      body {
-        margin: 0;
-        padding: 0;
-      }
-      .table-container {
-        width: 100%;
-        max-width: 100%;
-        margin: 0;
-      }
-      table {
-        width: 100%;
-        font-size: 10pt;
-        border-collapse: collapse;
-      }
-      th, td {
-        padding: 4px;
-        border: 1px solid #000;
-      }
-      h1, h2 {
-        font-size: 12pt;
-      }
-      .no-print {
-        display: none;
       }
     }
   </style>
 </head>
 <body>
+  <h1 class="header-title">รายงานอะไหล่เสียของช่างฝากคลังสินค้า SparePart ทั่วประเทศ</h1>
+
   <div id="searchContainer">
     <div class="filter-row">
       <label id="employeeFilterLabel" for="employeeFilter" class="modern-label">เลือกช่าง</label>
@@ -518,11 +543,7 @@
               .detail-table tr:nth-child(even) {
                 background-color: #f9f9f9;
               }
-              span.label {
-                color: #000;
-                font-weight: bold;
-              }
-              span.value {
+              span.label, span.value {
                 color: #000;
               }
               @media print {
@@ -628,7 +649,6 @@
         });
       }
 
-      // ลบการรีเซ็ต currentPage = 1
       renderTable(filteredData);
       updateCallCount(filteredData);
     }
@@ -671,7 +691,7 @@
 
         const columns = ["DateEmployee", "Plant", "IDEmployee", "Employee", "แผนก", "Depart", "GM"];
         const displayColumns = {
-          "DateEmployee": "วันทีรับฝากอะไหล่เสีย",
+          "DateEmployee": "วันที่ฝาก",
           "Plant": "Plant",
           "IDEmployee": "รหัสช่าง",
           "Employee": "ชื่อช่าง",
@@ -724,23 +744,19 @@
       const totalPages = Math.ceil(data.length / itemsPerPage);
       pageNumbersContainer.innerHTML = '';
 
-      // ตรวจสอบว่า currentPage อยู่ในช่วงที่ถูกต้อง
       if (currentPage > totalPages) {
         currentPage = totalPages || 1;
       }
 
-      // คำนวณช่วงของหน้าที่จะแสดง (แสดง 4 หน้าต่อครั้ง)
       const maxPagesToShow = 4;
       const halfPages = Math.floor(maxPagesToShow / 2);
       let startPage = Math.max(1, currentPage - halfPages);
       let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
 
-      // ปรับ startPage ถ้า endPage ถึงหน้าสุดท้าย
       if (endPage - startPage < maxPagesToShow - 1) {
         startPage = Math.max(1, endPage - maxPagesToShow + 1);
       }
 
-      // สร้างปุ่มเลขหน้า
       for (let i = startPage; i <= endPage; i++) {
         const pageNumberButton = document.createElement("button");
         pageNumberButton.className = `page-number ${i === currentPage ? 'active' : ''}`;
@@ -752,7 +768,6 @@
         pageNumbersContainer.appendChild(pageNumberButton);
       }
 
-      // อัปเดตสถานะปุ่มนำทาง
       firstPageButton.disabled = currentPage === 1;
       prevPageButton.disabled = currentPage === 1;
       nextPageButton.disabled = currentPage === totalPages;
