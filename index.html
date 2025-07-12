@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>รายงานพนักงาน</title>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <style>
     body {
       font-family: 'Prompt', sans-serif;
@@ -13,32 +14,36 @@
       margin: 0;
       padding: 20px;
     }
-    .header-title {
-      text-align: center;
-      font-size: 2.5rem;
-      color: #007bff;
-      margin-bottom: 30px;
-      font-weight: 700;
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-      background: linear-gradient(90deg, #007bff, #00c4b4);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      padding: 10px 20px;
-      border-bottom: 3px solid #007bff;
-      display: inline-block;
-      border-radius: 10px;
-      animation: fadeInDown 1s ease;
-    }
-    @keyframes fadeInDown {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
+    h1 {
+  text-align: center;
+  font-size: 36px;
+  font-weight: bold;
+  margin-bottom: 30px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+  border-radius: 12px;
+  padding: 15px 20px;
+  max-width: 90%;
+  margin: 20px auto 40px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  position: relative;
+  color: #003366; /* เปลี่ยนเป็นสีน้ำเงินเข้ม */
+}
+h1::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)) no-repeat;
+  pointer-events: none;
+  z-index: -1;
+  border-radius: 12px;
+}
     #searchContainer {
       display: flex;
       flex-direction: column;
@@ -79,7 +84,7 @@
       border-right: none;
       font-size: 16px;
     }
-    #searchButton {
+    #searchButton, #graphButton {
       padding: 10px;
       background-color: #3498db;
       color: white;
@@ -89,8 +94,38 @@
       cursor: pointer;
       transition: all 0.3s ease;
     }
-    #searchButton:hover {
+    #graphButton {
+      border-left: 1px solid #ccc;
+      border-radius: 8px;
+      margin-left: 5px;
+    }
+    #searchButton:hover, #graphButton:hover {
       background-color: #2980b9;
+    }
+    #summaryContainer {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #e6f2ff;
+      border-radius: 8px;
+      font-size: 16px;
+      color: #333;
+    }
+    #summaryContainer p {
+      margin: 5px 0;
+    }
+    #summaryContainer .label {
+      font-weight: bold;
+      color: #007bff;
+    }
+    #summaryContainer .value {
+      color: #d63384;
+      font-weight: bold;
+    }
+    #summaryContainer .gm-sums {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
     }
     .table-container {
       overflow-x: auto;
@@ -143,7 +178,7 @@
       transform: translateY(-2px);
       box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
-    .modal {
+    .modal, .chart-modal {
       display: none;
       position: fixed;
       z-index: 1000;
@@ -154,25 +189,25 @@
       overflow: auto;
       background-color: rgba(0,0,0,0.5);
     }
-    .modal-content {
+    .modal-content, .chart-modal-content {
       background-color: #fff;
       margin: 10% auto;
       padding: 20px;
       border-radius: 12px;
       width: 90%;
-      max-width: 1200px;
+      max-width: 1400px;
       animation: zoomIn 0.4s ease;
-      overflow-x: auto;
       position: relative;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
     }
-    .close {
+    .close, .chart-close {
       color: #aaa;
       float: right;
       font-size: 24px;
       font-weight: bold;
       cursor: pointer;
     }
-    .close:hover {
+    .close:hover, .chart-close:hover {
       color: #000;
     }
     .print-button {
@@ -294,6 +329,9 @@
         min-width: 80px;
         font-size: 14px;
       }
+      .chart-modal-content {
+        max-width: 90%;
+      }
     }
     .yellow-light {
       background-color: #c9ffc4;
@@ -359,42 +397,73 @@
     .detail-table tr:nth-child(even) {
       background-color: #f9f9f9;
     }
+    .image-button {
+      padding: 6px 10px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .image-button:hover {
+      background-color: #218838;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .image-modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.8);
+    }
+    .image-modal-content {
+      margin: auto;
+      display: block;
+      max-width: 90%;
+      max-height: 90%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .image-close {
+      position: absolute;
+      top: 15px;
+      right: 35px;
+      color: #fff;
+      font-size: 40px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .image-close:hover {
+      color: #bbb;
+    }
+    #imageError {
+      color: white;
+      text-align: center;
+      margin-top: 20px;
+      display: none;
+      font-size: 16px;
+    }
+    #imageError a {
+      color: #00f;
+      text-decoration: underline;
+    }
+    #imageError a:hover {
+      color: #fff;
+    }
+    #pieChart {
+      max-width: 100%;
+      max-height: 400px;
+    }
     @media print {
-      @page {
-        size: A4 landscape;
-        margin: 10mm;
-      }
-      body {
-        margin: 0;
-        padding: 0;
-      }
-      .header-title {
-        color: #000;
-        -webkit-text-fill-color: #000;
-        text-shadow: none;
-        background: none;
-        border-bottom: 2px solid #000;
-        font-size: 18pt;
-      }
-      .table-container {
-        width: 100%;
-        max-width: 100%;
-        margin: 0;
-      }
-      table {
-        width: 100%;
-        font-size: 10pt;
-        border-collapse: collapse;
-      }
-      th, td {
-        padding: 4px;
-        border: 1px solid #000;
-      }
-      h1, h2, h3 {
-        font-size: 12pt;
-        color: #000;
-      }
-      .close, .print-button, .no-print {
+      .close, .print-button, .image-button, .chart-close, #graphButton {
         display: none;
       }
       .modal-content {
@@ -413,15 +482,52 @@
         padding: 6px;
         border: 1px solid #000;
       }
-      span.label, span.value {
+      h2, h3 {
+        font-size: 14pt;
         color: #000;
+      }
+      span.label {
+        color: #000;
+        font-weight: bold;
+      }
+      span.value {
+        color: #000;
+      }
+    }
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      .table-container {
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+      }
+      table {
+        width: 100%;
+        font-size: 10pt;
+        border-collapse: collapse;
+      }
+      th, td {
+        padding: 4px;
+        border: 1px solid #000;
+      }
+      h1, h2 {
+        font-size: 12pt;
+      }
+      .no-print {
+        display: none;
       }
     }
   </style>
 </head>
 <body>
-  <h1 class="header-title">รายงานอะไหล่เสียของช่างฝากคลังสินค้า SparePart ทั่วประเทศ</h1>
-
+  <h1>รายงานอะไหล่เสียช่าง ฝากคลังสินค้า SparePart ทั่วประเทศ</h1>
   <div id="searchContainer">
     <div class="filter-row">
       <label id="employeeFilterLabel" for="employeeFilter" class="modern-label">เลือกช่าง</label>
@@ -433,8 +539,19 @@
       </div>
     </div>
     <div class="search-row">
-      <input type="text" id="searchInput" placeholder="ค้นหา รหัสช่าง, Plant ,ชื่อช่าง, แผนก, ฝ่าย, GM..." />
+      <input type="text" id="searchInput" placeholder="ค้นหา รหัสช่าง, Plant ,ชื่อช่าง, แผนก, ฝ่าย, GM, มูลค่ารวม..." />
       <button id="searchButton"><i class="fas fa-search"></i></button>
+      <button id="graphButton"><i class="fas fa-chart-pie"></i> กราฟ</button>
+    </div>
+    <div id="summaryContainer">
+      <p><span class="label">สรุปมูลค่ารวม:</span> <span class="value" id="totalSumValue">0</span> บาท</p>
+      <p class="gm-sums">
+        <span><span class="label">คุณวันชัย:</span> <span class="value" id="sumValueWanchai">0</span> บาท</span>
+        <span><span class="label">คุณกัญจน์พร:</span> <span class="value" id="sumValueKanchnaporn">0</span> บาท</span>
+        <span><span class="label">คุณทศพร:</span> <span class="value" id="sumValueTotsaporn">0</span> บาท</span>
+        <span><span class="label">คุณปรีดิวัฒน์:</span> <span class="value" id="sumValuePreediwat">0</span> บาท</span>
+        <span><span class="label">คุณทานตะวัน:</span> <span class="value" id="sumValueTantawan">0</span> บาท</span>
+      </p>
     </div>
   </div>
   <div class="table-container">
@@ -448,6 +565,7 @@
           <th class="sortable" data-column="แผนก">แผนก <span class="arrow"></span></th>
           <th class="sortable" data-column="Depart">ฝ่าย <span class="arrow"></span></th>
           <th class="sortable" data-column="GM">GM <span class="arrow"></span></th>
+          <th class="sortable" data-column="SumValue">มูลค่ารวม <span class="arrow"></span></th>
           <th>ดูรายละเอียด</th>
         </tr>
       </thead>
@@ -464,6 +582,22 @@
       </button>
       <h2>รายละเอียด</h2>
       <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <div id="imageModal" class="image-modal">
+    <span class="image-close" id="imageClose">×</span>
+    <img class="image-modal-content" id="largeImage">
+    <div id="imageError" style="color: white; text-align: center; margin-top: 20px; display: none;">
+      ไม่สามารถโหลดรูปภาพได้ กรุณาคลิก <a id="imageLink" href="#" target="_blank">ที่นี่</a> เพื่อดูรูปภาพ
+    </div>
+  </div>
+
+  <div id="chartModal" class="chart-modal">
+    <div class="chart-modal-content">
+      <span class="chart-close" id="chartClose">×</span>
+      <h2>กราฟมูลค่ารวมตาม GM</h2>
+      <canvas id="pieChart"></canvas>
     </div>
   </div>
 
@@ -493,9 +627,17 @@
     const modal = document.getElementById("detailModal");
     const modalContent = document.getElementById("modalContent");
     const closeModal = document.getElementById("closeModal");
+    const imageModal = document.getElementById("imageModal");
+    const largeImage = document.getElementById("largeImage");
+    const imageClose = document.getElementById("imageClose");
+    const imageError = document.getElementById("imageError");
+    const imageLink = document.getElementById("imageLink");
     const employeeFilter = document.getElementById("employeeFilter");
     const searchInput = document.getElementById("searchInput");
     const searchButton = document.getElementById("searchButton");
+    const graphButton = document.getElementById("graphButton");
+    const chartModal = document.getElementById("chartModal");
+    const chartClose = document.getElementById("chartClose");
     const tableBody = document.querySelector("#data-table tbody");
     const pageNumbersContainer = document.getElementById("pageNumbers");
     const firstPageButton = document.getElementById("firstPage");
@@ -509,6 +651,7 @@
     let currentPage = 1;
     let itemsPerPage = 20;
     let sortConfig = { column: null, direction: 'asc' };
+    let pieChart = null;
 
     function printModalContent() {
       const printWindow = window.open('', '_blank');
@@ -543,7 +686,11 @@
               .detail-table tr:nth-child(even) {
                 background-color: #f9f9f9;
               }
-              span.label, span.value {
+              span.label {
+                color: #000;
+                font-weight: bold;
+              }
+              span.value {
                 color: #000;
               }
               @media print {
@@ -554,6 +701,7 @@
             </style>
           </head>
           <body onload="window.print()">
+            <h1>รายงานอะไหล่เสียของช่างฝากคลังสินค้า SparePart ทั่วประเทศ</h1>
             ${content}
           </body>
         </html>
@@ -562,8 +710,32 @@
     }
 
     closeModal.onclick = () => modal.style.display = "none";
+    imageClose.onclick = () => {
+      imageModal.style.display = "none";
+      imageError.style.display = "none";
+      largeImage.style.display = "block";
+    };
+    chartClose.onclick = () => {
+      chartModal.style.display = "none";
+      if (pieChart) {
+        pieChart.destroy();
+        pieChart = null;
+      }
+    };
     window.onclick = event => {
       if (event.target == modal) modal.style.display = "none";
+      if (event.target == imageModal) {
+        imageModal.style.display = "none";
+        imageError.style.display = "none";
+        largeImage.style.display = "block";
+      }
+      if (event.target == chartModal) {
+        chartModal.style.display = "none";
+        if (pieChart) {
+          pieChart.destroy();
+          pieChart = null;
+        }
+      }
     };
 
     itemsPerPageSelect.addEventListener("change", (e) => {
@@ -581,6 +753,128 @@
     searchButton.addEventListener("click", () => {
       filterAndRenderTable();
     });
+
+    graphButton.addEventListener("click", () => {
+      chartModal.style.display = "block";
+      showPieChart();
+    });
+
+    function showPieChart() {
+      const ctx = document.getElementById("pieChart").getContext("2d");
+      if (pieChart) {
+        pieChart.destroy();
+      }
+
+      const filteredData = allData.filter(row => {
+        const selectedEmployee = employeeFilter.value;
+        const keyword = searchInput.value.toLowerCase().trim();
+        return (
+          (!selectedEmployee || row["Employee"] === selectedEmployee) &&
+          (!keyword ||
+            (row["DateEmployee"] || "").toLowerCase().includes(keyword) ||
+            (row["Plant"] || "").toLowerCase().includes(keyword) ||
+            (row["IDEmployee"] || "").toLowerCase().includes(keyword) ||
+            (row["Employee"] || "").toLowerCase().includes(keyword) ||
+            (row["แผนก"] || "").toLowerCase().includes(keyword) ||
+            (row["Depart"] || "").toLowerCase().includes(keyword) ||
+            (row["GM"] || "").toLowerCase().includes(keyword) ||
+            (row["SumValue"] || "").toLowerCase().includes(keyword)
+          )
+        );
+      });
+
+      const gmSums = {
+        "คุณวันชัย": 0,
+        "คุณกัญจน์พร": 0,
+        "คุณทศพร": 0,
+        "คุณปรีดิวัฒน์": 0,
+        "คุณทานตะวัน": 0
+      };
+
+      let totalSum = 0;
+      filteredData.forEach(row => {
+        const sumValue = parseFloat((row["SumValue"] || "0").replace(/,/g, '')) || 0;
+        totalSum += sumValue;
+        const gm = row["GM"] || "";
+        if (gmSums.hasOwnProperty(gm)) {
+          gmSums[gm] += sumValue;
+        }
+      });
+
+      const data = [
+        gmSums["คุณวันชัย"],
+        gmSums["คุณกัญจน์พร"],
+        gmSums["คุณทศพร"],
+        gmSums["คุณปรีดิวัฒน์"],
+        gmSums["คุณทานตะวัน"]
+      ];
+
+      pieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: [
+            'คุณวันชัย',
+            'คุณกัญจน์พร',
+            'คุณทศพร',
+            'คุณปรีดิวัฒน์',
+            'คุณทานตะวัน'
+          ],
+          datasets: [{
+            data: data,
+            backgroundColor: [
+              '#FF6384',
+              '#36A2EB',
+              '#FFCE56',
+              '#4BC0C0',
+              '#9966FF'
+            ],
+            borderColor: '#fff',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                font: {
+                  family: 'Prompt',
+                  size: 14
+                }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.label || '';
+                  let value = context.raw || 0;
+                  return `${label}: ${value.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`;
+                }
+              }
+            },
+            datalabels: {
+              formatter: (value, context) => {
+                const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                const percentage = total > 0 ? ((value / total) * 100).toFixed(2) : 0;
+                return `${percentage}%`;
+              },
+              color: '#000',
+              backgroundColor: 'rgba(255, 255, 255, 0.7)',
+              borderRadius: 3,
+              font: {
+                family: 'Prompt',
+                size: 12,
+                weight: 'bold'
+              },
+              padding: 4
+            }
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+    }
 
     function populateEmployeeFilter(data) {
       const employees = [...new Set(data.map(row => row["Employee"]).filter(employee => employee))].sort();
@@ -623,6 +917,33 @@
       });
     }
 
+    function calculateSums(filteredData) {
+      let totalSum = 0;
+      const gmSums = {
+        "คุณวันชัย": 0,
+        "คุณกัญจน์พร": 0,
+        "คุณทศพร": 0,
+        "คุณปรีดิวัฒน์": 0,
+        "คุณทานตะวัน": 0
+      };
+
+      filteredData.forEach(row => {
+        const sumValue = parseFloat((row["SumValue"] || "0").replace(/,/g, '')) || 0;
+        totalSum += sumValue;
+        const gm = row["GM"] || "";
+        if (gmSums.hasOwnProperty(gm)) {
+          gmSums[gm] += sumValue;
+        }
+      });
+
+      document.getElementById("totalSumValue").textContent = totalSum.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById("sumValueWanchai").textContent = gmSums["คุณวันชัย"].toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById("sumValueKanchnaporn").textContent = gmSums["คุณกัญจน์พร"].toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById("sumValueTotsaporn").textContent = gmSums["คุณทศพร"].toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById("sumValuePreediwat").textContent = gmSums["คุณปรีดิวัฒน์"].toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById("sumValueTantawan").textContent = gmSums["คุณทานตะวัน"].toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
     function filterAndRenderTable() {
       const selectedEmployee = employeeFilter.value;
       const keyword = searchInput.value.toLowerCase().trim();
@@ -635,7 +956,8 @@
           (row["Employee"] || "").toLowerCase().includes(keyword) ||
           (row["แผนก"] || "").toLowerCase().includes(keyword) ||
           (row["Depart"] || "").toLowerCase().includes(keyword) ||
-          (row["GM"] || "").toLowerCase().includes(keyword)
+          (row["GM"] || "").toLowerCase().includes(keyword) ||
+          (row["SumValue"] || "").toLowerCase().includes(keyword)
         )
       );
 
@@ -643,14 +965,21 @@
         filteredData.sort((a, b) => {
           let valueA = a[sortConfig.column] || "";
           let valueB = b[sortConfig.column] || "";
-          valueA = valueA.toString().toLowerCase();
-          valueB = valueB.toString().toLowerCase();
-          return sortConfig.direction === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+          if (sortConfig.column === "SumValue") {
+            valueA = parseFloat((valueA || "0").replace(/,/g, '')) || 0;
+            valueB = parseFloat((valueB || "0").replace(/,/g, '')) || 0;
+            return sortConfig.direction === 'asc' ? valueA - valueB : valueB - valueA;
+          } else {
+            valueA = valueA.toString().toLowerCase();
+            valueB = valueB.toString().toLowerCase();
+            return sortConfig.direction === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
+          }
         });
       }
 
       renderTable(filteredData);
       updateCallCount(filteredData);
+      calculateSums(filteredData);
     }
 
     employeeFilter.addEventListener("change", filterAndRenderTable);
@@ -689,15 +1018,16 @@
         const employee = row["IDEmployee"];
         tr.className = colorMap[employee];
 
-        const columns = ["DateEmployee", "Plant", "IDEmployee", "Employee", "แผนก", "Depart", "GM"];
+        const columns = ["DateEmployee", "Plant", "IDEmployee", "Employee", "แผนก", "Depart", "GM", "SumValue"];
         const displayColumns = {
-          "DateEmployee": "วันที่ฝาก",
+          "DateEmployee": "วันทีรับฝากอะไหล่เสีย",
           "Plant": "Plant",
           "IDEmployee": "รหัสช่าง",
           "Employee": "ชื่อช่าง",
           "แผนก": "แผนก",
           "Depart": "ฝ่าย",
-          "GM": "GM"
+          "GM": "GM",
+          "SumValue": "มูลค่ารวม"
         };
         columns.forEach(col => {
           const td = document.createElement("td");
@@ -721,9 +1051,11 @@
           
           if (filteredDetails.length > 0) {
             modalHtml += '<h3>รายละเอียดเพิ่มเติม</h3>';
-            modalHtml += '<table class="detail-table"><tr><th>รหัสช่าง</th><th>Material</th><th>รายละเอียด</th><th>จำนวน</th><th>สาเหตุ อาการ</th></tr>';
+            modalHtml += '<table class="detail-table"><tr><th>รหัสช่าง</th><th>Material</th><th>รายละเอียด</th><th>จำนวน</th><th>สาเหตุ อาการ</th><th>รูปภาพ</th></tr>';
             filteredDetails.forEach(detail => {
-              modalHtml += `<tr><td>${detail["IDEmployeeX"] || ""}</td><td>${detail["Materail"] || ""}</td><td>${detail["Description"] || ""}</td><td>${detail["Qty"] || ""}</td><td>${detail["Note"] || ""}</td></tr>`;
+              const imageUrl = detail["ImageX"] || "";
+              const imageCell = imageUrl ? `<a href="${imageUrl}" target="_blank" class="image-button" onclick="showLargeImage('${imageUrl}'); return false;">ดูรูปภาพ</a>` : "";
+              modalHtml += `<tr><td>${detail["IDEmployeeX"] || ""}</td><td>${detail["Materail"] || ""}</td><td>${detail["Description"] || ""}</td><td>${detail["Qty"] || ""}</td><td>${detail["Note"] || ""}</td><td>${imageCell}</td></tr>`;
             });
             modalHtml += '</table>';
           } else {
@@ -738,6 +1070,14 @@
         tableBody.appendChild(tr);
       });
       updatePagination(data);
+    }
+
+    function showLargeImage(originalUrl) {
+      if (originalUrl) {
+        window.open(originalUrl, '_blank');
+      } else {
+        console.error("Invalid image URL");
+      }
     }
 
     function updatePagination(data) {
@@ -800,7 +1140,8 @@
               (row["Employee"] || "").toLowerCase().includes(keyword) ||
               (row["แผนก"] || "").toLowerCase().includes(keyword) ||
               (row["Depart"] || "").toLowerCase().includes(keyword) ||
-              (row["GM"] || "").toLowerCase().includes(keyword)
+              (row["GM"] || "").toLowerCase().includes(keyword) ||
+              (row["SumValue"] || "").toLowerCase().includes(keyword)
             )
           );
         }).length / itemsPerPage
@@ -825,7 +1166,8 @@
               (row["Employee"] || "").toLowerCase().includes(keyword) ||
               (row["แผนก"] || "").toLowerCase().includes(keyword) ||
               (row["Depart"] || "").toLowerCase().includes(keyword) ||
-              (row["GM"] || "").toLowerCase().includes(keyword)
+              (row["GM"] || "").toLowerCase().includes(keyword) ||
+              (row["SumValue"] || "").toLowerCase().includes(keyword)
             )
           );
         }).length / itemsPerPage
@@ -846,7 +1188,7 @@
       })
       .catch(error => {
         console.error("ไม่สามารถโหลดข้อมูลได้:", error);
-        tableBody.innerHTML = '<tr><td colspan="8">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="9">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
       });
   </script>
 </body>
