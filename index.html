@@ -15,35 +15,35 @@
       padding: 20px;
     }
     h1 {
-  text-align: center;
-  font-size: 36px;
-  font-weight: bold;
-  margin-bottom: 30px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
-  border-radius: 12px;
-  padding: 15px 20px;
-  max-width: 90%;
-  margin: 20px auto 40px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  position: relative;
-  color: #003366; /* เปลี่ยนเป็นสีน้ำเงินเข้ม */
-}
-h1::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)) no-repeat;
-  pointer-events: none;
-  z-index: -1;
-  border-radius: 12px;
-}
+      text-align: center;
+      font-size: 36px;
+      font-weight: bold;
+      margin-bottom: 30px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+      border-radius: 12px;
+      padding: 15px 20px;
+      max-width: 90%;
+      margin: 20px auto 40px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      position: relative;
+      color: #003366;
+    }
+    h1::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0)) no-repeat;
+      pointer-events: none;
+      z-index: -1;
+      border-radius: 12px;
+    }
     #searchContainer {
       display: flex;
       flex-direction: column;
@@ -944,6 +944,17 @@ h1::before {
       document.getElementById("sumValueTantawan").textContent = gmSums["คุณทานตะวัน"].toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    // Helper function to parse DD/MM/YYYY date format
+    function parseDate(dateStr) {
+      if (!dateStr) return new Date(0); // Handle empty or invalid dates
+      const parts = dateStr.split('/');
+      if (parts.length !== 3) return new Date(0); // Invalid format
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // Months are 0-based in JavaScript
+      const year = parseInt(parts[2], 10);
+      return new Date(year, month, day);
+    }
+
     function filterAndRenderTable() {
       const selectedEmployee = employeeFilter.value;
       const keyword = searchInput.value.toLowerCase().trim();
@@ -965,7 +976,12 @@ h1::before {
         filteredData.sort((a, b) => {
           let valueA = a[sortConfig.column] || "";
           let valueB = b[sortConfig.column] || "";
-          if (sortConfig.column === "SumValue") {
+          if (sortConfig.column === "DateEmployee") {
+            // Parse dates for DateEmployee column
+            valueA = parseDate(valueA);
+            valueB = parseDate(valueB);
+            return sortConfig.direction === 'asc' ? valueA - valueB : valueB - valueA;
+          } else if (sortConfig.column === "SumValue") {
             valueA = parseFloat((valueA || "0").replace(/,/g, '')) || 0;
             valueB = parseFloat((valueB || "0").replace(/,/g, '')) || 0;
             return sortConfig.direction === 'asc' ? valueA - valueB : valueB - valueA;
